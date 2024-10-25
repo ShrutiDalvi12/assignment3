@@ -1,0 +1,193 @@
+
+<div class="container p-5 my-5">
+
+    <form class="form1">
+    <h2 class="text-center">Weather Search <span><img src="/assets/images/mostly_clear_day.svg" width="30" height="30"></span></h2>
+    
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-2">
+            <label for="street">Street<span class="text-danger">*</span></label>
+        </div>
+        <div class="col-md-10">
+            <input id="street" name="street" class="form-control rounded" placeholder="Enter street" 
+                   [(ngModel)]="street" 
+                   (focus)="validateStreet()" 
+                   (input)="clearStreetMessage()" 
+                   required>
+            <div *ngIf="showStreetMessage" class="alert alert-warning">
+                Please enter a valid street.
+            </div>
+        </div>
+    </div>
+
+    <!-- <div class="row mb-3 align-items-center">
+        <div class="col-md-2">
+            <label for="city">City<span class="text-danger">*</span></label>
+        </div>
+        <div class="col-md-10">
+            <input id="city" name="city" class="form-control rounded" placeholder="Enter city" 
+                   [(ngModel)]="city" 
+                   (focus)="validateCity()" 
+                   (input)="clearCityMessage()" 
+                   required>
+            <div *ngIf="showCityMessage" class="alert alert-warning">
+                Please enter a valid city.
+            </div>
+        </div>
+    </div> -->
+
+
+    <!-- <div class="row mb-3 align-items-center">
+        <div class="col-md-2">
+            <label for="state">State<span class="text-danger">*</span></label>
+        </div>
+        <div class="col-md-10">
+            <input id="state" name="state" class="form-control rounded" placeholder="Enter state"
+                [(ngModel)]="state" 
+                (focus)="validateState()" 
+                (input)="filterStates()" 
+                required>
+            <div *ngIf="showStateMessage" class="alert alert-warning">
+                Please enter a valid state.
+            </div>
+            
+            <ul class="dropdown-list" *ngIf="filteredStates.length > 0">
+                <li *ngFor="let stateOption of filteredStates" 
+                    (click)="selectState(stateOption)" 
+                    class="dropdown-item">
+                    {{ stateOption }}
+                </li>
+            </ul>
+        </div>
+    </div> -->
+
+    <!-- <div class="row mb-3 align-items-center">
+    <div class="col-md-2">
+        <label for="state">State<span class="text-danger">*</span></label>
+    </div>
+    <div class="col-md-10">
+
+            <input id="state" name="state" class="form-control2 rounded"  matInput [formControl]="stateControl" 
+                   [matAutocomplete]="autoState" placeholder="Enter state" 
+                   (input)="validateState(stateControl.value)"
+                   (focus)="validateState(stateControl.value)" required>
+
+            <mat-autocomplete #autoState="matAutocomplete">
+                <mat-option *ngFor="let stateOption of filteredStates | async" [value]="stateOption">
+                    {{ stateOption }}
+                </mat-option>
+            </mat-autocomplete>
+
+        <div *ngIf="showStateMessage" class="alert alert-warning">
+            Please enter a valid state.
+        </div>
+    </div> -->
+    
+    <!-- <div class="row mb-3 align-items-center">
+        <div class="col-md-2">
+            <label for="city">City<span class="text-danger">*</span></label>
+        </div>
+        <div class="col-md-10">
+            <input id="city" name="city" class="form-control rounded" placeholder="Enter city" 
+                [formControl]="cityControl" 
+                (focus)="clearCityMessage()" 
+                required>
+            <mat-autocomplete *ngIf="filteredCities | async as suggestions">
+                <mat-option *ngFor="let suggestion of suggestions" [value]="suggestion.description">
+                    {{ suggestion.description }}
+                </mat-option>
+            </mat-autocomplete>
+            <div *ngIf="showCityMessage" class="alert alert-warning">
+                Please enter a valid city.
+            </div>
+        </div>
+    </div> -->
+    <div class="row mb-3 align-items-center">
+    <div class="col-md-2">
+        <label for="city">City<span class="text-danger">*</span></label>
+    </div>
+    <div class="col-md-10">
+        <input 
+    id="city" 
+    name="city" 
+    class="form-control rounded" 
+    placeholder="Enter city" 
+    [formControl]="cityControl" 
+    (input)="validateCity(cityControl.value)"
+    (focus)="validateCity(cityControl.value)"
+    required 
+    [matAutocomplete]="auto" />
+        <mat-autocomplete #auto="matAutocomplete">  <!-- Define the autocomplete reference -->
+            <mat-option *ngFor="let suggestion of filteredCities | async" [value]="suggestion.name">
+                {{ suggestion.name }}
+            </mat-option>
+        </mat-autocomplete>
+        <div *ngIf="showCityMessage" class="alert alert-warning">
+            Please enter a valid city.
+        </div>
+    </div>
+</div>
+
+    <!-- <div class="row mb-3 align-items-center">
+        <div class="col-md-2">
+            <label for="state">State<span class="text-danger">*</span></label>
+        </div>
+        <div class="col-md-10">
+            <input id="state" name="state" class="form-control rounded" placeholder="Enter state" 
+                [formControl]="stateControl" 
+                (focus)="clearStateMessage()" 
+                required>
+            <mat-autocomplete *ngIf="filteredStates | async as states">
+                <mat-option *ngFor="let state of states" [value]="state">
+                    {{ state }}
+                </mat-option>
+            </mat-autocomplete>
+            <div *ngIf="showStateMessage" class="alert alert-warning">
+                Please enter a valid state.
+            </div>
+        </div>
+    </div> -->
+
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-2">
+            <label for="state">State<span class="text-danger">*</span></label>
+        </div>
+        <div class="col-md-10">
+
+                <input id="state" name="state" class="form-control2 rounded"  matInput [formControl]="stateControl" 
+                    [matAutocomplete]="autoState" placeholder="Enter state" 
+                    (input)="validateState(stateControl.value)"
+                    (focus)="validateState(stateControl.value)" required>
+
+                <mat-autocomplete #autoState="matAutocomplete">
+                    <mat-option *ngFor="let stateOption of filteredStates | async" [value]="stateOption">
+                        {{ stateOption }}
+                    </mat-option>
+                </mat-autocomplete>
+
+            <div *ngIf="showStateMessage" class="alert alert-warning">
+                Please enter a valid state.
+            </div>
+        </div>
+    </div>
+
+
+    <div>
+        <hr>
+    </div>
+    <div class="row mb-3 align-items-center text-center">
+        <p>Autodetect Location <span><input type="checkbox"></span> Current Location</p>
+    </div>
+    <div class="container mt-3 d-flex justify-content-center align-items-center">
+    <button type="button" class="btn btn-primary me-2">
+        <img src="/assets/images/search.svg" alt="Search" class="icon"> Search
+    </button>
+    <button type="button" class="btn btn-outline-secondary">
+        <img src="/assets/images/list-nested.svg" alt="Clear" class="icon"> Clear
+    </button>
+</div>
+</form>
+
+
+</div>
+
