@@ -1,0 +1,45 @@
+<div class="container mt-3 d-flex justify-content-center align-items-center">
+  <button
+    class="btn"
+    [ngClass]="{
+      'btn-primary': activeButton === 'button1',
+      'text-white': activeButton === 'button1',
+      'text-primary': activeButton !== 'button1'
+    }"
+    (click)="selectButton('button1')"
+  >
+    Result
+  </button>
+  <button
+    class="btn"
+    [ngClass]="{
+      'btn-primary': activeButton === 'button2',
+      'text-white': activeButton === 'button2',
+      'text-primary': activeButton !== 'button2'
+    }"
+    (click)="selectButton('button2')"
+  >
+    Favorites
+  </button>
+</div>
+
+<div class="result-section">
+  <div *ngIf="activeButton === 'button1'">
+
+  </div>
+  <div *ngIf="activeButton === 'button2'"></div>
+</div>
+
+    
+
+<div class="result-section">
+  <div *ngIf="weatherData">
+    <p id = "forecasttext" class="text-center">Forecast at {{ city }}, {{ state }}</p>
+    <!-- Add more weather details as needed -->
+  </div>
+  <p id = "forecasttext" class="text-center"> Forecast at New York New York</p>
+  <!-- <div *ngIf="!weatherData">
+    <p>No weather data available. Please enter a city and state.</p>
+  </div> -->
+</div>
+
