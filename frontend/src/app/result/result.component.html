@@ -1,45 +1,306 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.3/font/bootstrap-icons.min.css" />
+
 <div class="container mt-3 d-flex justify-content-center align-items-center">
   <button
     class="btn"
     [ngClass]="{
-      'btn-primary': activeButton === 'button1',
-      'text-white': activeButton === 'button1',
-      'text-primary': activeButton !== 'button1'
+      'btn-primary': activeButton === ButtonType.Button1,
+'text-white': activeButton === ButtonType.Button1,
+'text-primary': activeButton !== ButtonType.Button1
     }"
-    (click)="selectButton('button1')"
+    (click)="selectButton(ButtonType.Button1)"
   >
     Result
   </button>
   <button
     class="btn"
     [ngClass]="{
-      'btn-primary': activeButton === 'button2',
-      'text-white': activeButton === 'button2',
-      'text-primary': activeButton !== 'button2'
+      'btn-primary': activeButton === ButtonType.Button2,
+'text-white': activeButton === ButtonType.Button2,
+'text-primary': activeButton !== ButtonType.Button2
     }"
-    (click)="selectButton('button2')"
+    (click)="selectButton(ButtonType.Button2)"
   >
     Favorites
   </button>
 </div>
 
-<div class="result-section">
-  <div *ngIf="activeButton === 'button1'">
-
+<div *ngIf="loading" class="progress-container">
+  <div class="progress">
+    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+         role="progressbar" 
+         style="width: 100%" 
+         aria-valuenow="0" 
+         aria-valuemin="0" 
+         aria-valuemax="100">
+      Loading data...
+    </div>
   </div>
-  <div *ngIf="activeButton === 'button2'"></div>
 </div>
+
+<div *ngIf="!loading">
+  <!-- Existing component content goes here -->
+      <div *ngIf="iserror" class="alert alert-danger">
+      {{ errorMessage }}
+  </div>
+
+  <div class="result-section" *ngIf="showContent" @slideTransition>
+
+      <div *ngIf="!errorMessage">
+        
+          <div *ngIf="activeButton === ButtonType.Button1">
+            <p class="text-center">Forecast at {{city}} , {{state}}</p>
+        <div class="d-flex align-items-center position-absolute end-0 p-3"><button (click)="toggleStar()" class="details-button">
+        <i [ngClass]="isStarred ? 'bi bi-star-fill' : 'bi bi-star'"></i> 
+    </button>
+    <span class="details-text" (click)="details()">Details</span>
+        <i class="bi bi-chevron-right"></i></div>
+        <ul class="nav nav-tabs">
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [ngClass]="{ active: activeTab === TabType.DayView }"
+              (click)="activeTab = TabType.DayView"
+              href="#"
+            >Day View</a>
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [ngClass]="{ active: activeTab === TabType.DailyTemp }"
+              (click)="activeTab = TabType.DailyTemp"
+              href="#"
+            >Daily Temperature</a>
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [ngClass]="{ active: activeTab === TabType.Meteogram }"
+              (click)="activeTab = TabType.Meteogram"
+              href="#"
+            >Meteogram</a>
+          </li>
+        </ul>
+
+        <div class="tab-content mt-3">
+          <!-- Day View Tab Content -->
+          <div *ngIf="activeTab === TabType.DayView">
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered text-center">
+                <thead class="thead-light">
+                  <tr>
+                    <th>Date</th>
+                    <th>Weather Status</th>
+                    <th>Temperature Min (°C)</th>
+                    <th>Temperature Max (°C)</th>
+                    <th>Wind Speed (m/s)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let day of weatherData?.forecast?.intervals">
+                    <td (click)="selectDay(day)">{{ day.startTime | date: 'fullDate' }}</td>
+                    <td><img [src]="getWeatherImg(day.values.weatherCode)" alt="{{ day.values.weatherCode }}" class="weather-icon">{{ getWeatherType(day.values.weatherCode) }}</td>
+                    <td>{{ day.values.temperatureMin }} °C</td>
+                    <td>{{ day.values.temperatureMax }} °C</td>
+                    <td>{{ day.values.windSpeed }} m/s</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Daily Temperature Tab Content -->
+          <div *ngIf="activeTab === TabType.DailyTemp">
+            <p class="text-center">Daily temperature chart will be displayed here.</p>
+            <div id="container" *ngIf="chartOptions1">
+              <highcharts-chart 
+      *ngIf="showContent"
+      [Highcharts]="Highcharts"
+      [options]="chartOptions1"
+      style="width: 100%; height: 400px; display: block;">
+    </highcharts-chart>
+            </div>
+          </div>
+
+          <!-- Meteogram Tab Content -->
+          <div *ngIf="activeTab === TabType.Meteogram">
+            <p class="text-center">Meteogram chart will be displayed here.</p>
+            <highcharts-chart 
+      *ngIf="showContent"
+      [Highcharts]="Highcharts"
+      [options]="chartOptions2"
+      style="width: 100%; height: 400px; display: block;">
+    </highcharts-chart>
+          </div>
+        </div>
+      </div>
+    </div>  
 
     
+    <!-- <div *ngIf="activeButton === ButtonType.Button2">
+      <div *ngIf="favorites.length > 0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>City</th>
+            <th>State</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let favorite of favorites; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ favorite.city }}</td>
+            <td>{{ favorite.state }}</td>
+            <td>
+              <button type="button" class="btn">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-<div class="result-section">
-  <div *ngIf="weatherData">
-    <p id = "forecasttext" class="text-center">Forecast at {{ city }}, {{ state }}</p>
-    <!-- Add more weather details as needed -->
+    <div *ngIf="favorites.length === 0">
+      <p>No favorites found.</p>
+    </div>
+    </div> -->
+
   </div>
-  <p id = "forecasttext" class="text-center"> Forecast at New York New York</p>
-  <!-- <div *ngIf="!weatherData">
-    <p>No weather data available. Please enter a city and state.</p>
-  </div> -->
+
+
+  <div *ngIf="selectedDay" class="p-3" @slideTransition>
+
+  <div *ngIf="activeButton === ButtonType.Button1">
+    <div class="d-flex align-items-center  justify-content-between mb-3">
+      <button  (click)="showprevious()"><i class="bi bi-chevron-left"></i><span>List</span></button>
+      <h5 class="mx-auto">{{ selectedDay.startTime | date: 'fullDate' }}</h5>
+      <button (click)="tweetWeather()"><i class="bi bi-twitter-x"></i><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter-x" viewBox="0 0 16 16">
+  <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/>
+</svg></button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-striped table-bordered">
+        <tbody>
+          <tr>
+            <td><strong>Status</strong></td>
+            <td>{{ selectedDay.values.weatherCode }}</td>
+          </tr>
+          <tr>
+            <td><strong>Max Temperature</strong></td>
+            <td>{{ selectedDay.values.temperatureMax }} °F</td>
+          </tr>
+          <tr>
+            <td><strong>Min Temperature</strong></td>
+            <td>{{ selectedDay.values.temperatureMin }} °F</td>
+          </tr>
+          <tr>
+            <td><strong>Apparent Temperature</strong></td>
+            <td>{{ selectedDay.values.temperature }} °F</td>
+          </tr>
+          <tr>
+            <td><strong>Sunrise Time</strong></td>
+            <td>{{ selectedDay.values.sunriseTime }} </td>
+          </tr>
+          <tr>
+            <td><strong>Sunset Time</strong></td>
+            <td>{{ selectedDay.values.sunsetTime }} </td>
+          </tr>
+          <tr>
+            <td><strong>Humidity</strong></td>
+            <td>{{ selectedDay.values.humidity }} %</td>
+          </tr>
+          <tr>
+            <td><strong>Wind Speed</strong></td>
+            <td>{{ selectedDay.values.windSpeed }} mph</td>
+          </tr>
+          <tr>
+            <td><strong>Visibility</strong></td>
+            <td>{{ selectedDay.values.visibility }} mi</td>
+          </tr>
+          <tr>
+            <td><strong>Cloud Cover</strong></td>
+            <td>{{ selectedDay.values.cloudCover }} %</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <google-map
+  width="100%"
+  height="500px"
+  [center]="{ lat: lat, lng: lon }"
+  [zoom]="zoom"
+  [markers]="[{ position: markerPosition}]">
+</google-map>
+  </div>
+  
+  </div>
+
 </div>
+
+<div *ngIf="showFavourites">
+  <div *ngIf="activeButton === ButtonType.Button2" class="container p-3" (click)="fetchFavorites()">
+      <div *ngIf="favorites.length > 0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>City</th>
+            <th>State</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let favorite of favorites; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td (click)="showfavdata(favorite.city,favorite.state)">{{ favorite.city }}</td>
+            <td>{{ favorite.state }}</td>
+            <td>
+              <button (click)="deleteFavorite(favorite.city)"  type="button" class="btn">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="favorites.length === 0" class="alert alert-warning">
+      <p><strong>Sorry!</strong> No Records found.</p>
+    </div>
+    </div>
+</div>
+<!-- <div *ngIf="activeButton === ButtonType.Button2" class="container p-3" (click)="fetchFavorites()">
+      <div *ngIf="favorites.length > 0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>City</th>
+            <th>State</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let favorite of favorites; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ favorite.city }}</td>
+            <td>{{ favorite.state }}</td>
+            <td>
+              <button type="button" class="btn">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="favorites.length === 0">
+      <p>No favorites found.</p>
+    </div>
+    </div> -->
+
 

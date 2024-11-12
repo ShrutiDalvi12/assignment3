@@ -7,14 +7,27 @@ import { FormControl } from '@angular/forms';
 import { Observable , of, from} from 'rxjs';
 import { map, startWith ,switchMap,debounceTime, distinctUntilChanged} from 'rxjs/operators';
 import { ResultComponent } from '../../../result/result.component';
+import { SharedService } from '../../../shared.service';
 
 import { GooglePlacesService } from '../../../google-places.service.js'; 
 import { LocationService } from '../../../location.service.js'; 
+import { ChangeDetectorRef } from '@angular/core';
+import { combineLatest } from 'rxjs';
+
 interface City {
   name: string;
   statename : string;
   place_id: string;
 }
+interface IpInfo {
+  ip: string;
+  city: string;
+  region: string;
+  country: string;
+  loc: string;
+  postal: string;
+}
+//(click)="onSearchInitiated($event)"
 @Component({
   selector: 'app-header',
   standalone: true,
@@ -26,6 +39,7 @@ interface City {
 
 
 export class HeaderComponent implements OnInit {
+  
   street: string = '';
   city: string = '';
   state: string = '';
@@ -41,7 +55,7 @@ export class HeaderComponent implements OnInit {
     'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
     'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
   ];
-
+  streetControl = new FormControl();
   cityControl = new FormControl();
   stateControl = new FormControl();
   filteredCities!: Observable<City[]>; 
@@ -51,9 +65,14 @@ export class HeaderComponent implements OnInit {
   showStateMessage: boolean = false;
   selectedcity : string ='';
   selectedstate : string ='';
+  isLocationDetectionEnabled: boolean = false;
+  searchclicked : boolean = false;
+  IPINFO_TOKEN = 'c66e913b7616e3';
    constructor(
     private googlePlacesService: GooglePlacesService,
-    private locationService: LocationService
+    private locationService: LocationService,
+    private sharedService: SharedService,
+    private cdr: ChangeDetectorRef
   ) {}
   ngOnInit() {
 
@@ -81,14 +100,91 @@ export class HeaderComponent implements OnInit {
           this.selectedstate = selectedCity.statename;
           this.locationService.setCity(selectedCity.name);
           this.locationService.setState(selectedCity.statename);
+          this.onSearch();
+          this.sharedService.toggleContentVisibility(true);
         }
       });
     });
   }
 
+//   ngOnInit() {
+//   this.filteredCities = this.cityControl.valueChanges.pipe(
+//     startWith(''),
+//     switchMap(value => this.googlePlacesService.getAutocompleteSuggestions(value)),
+//     map(predictions => predictions.map(prediction => ({
+//       name: prediction.terms.length > 2 ? prediction.terms[prediction.terms.length - 3].value : '',
+//       statename: prediction.terms.length > 2 ? prediction.terms[prediction.terms.length - 2].value : '',
+//     } as City)))
+//   );
+
+//   this.filteredStates = this.stateControl.valueChanges.pipe(
+//     startWith(''),
+//     map(value => this._filterStates(value))
+//   );
+
+//   combineLatest([this.cityControl.valueChanges, this.stateControl.valueChanges])
+//     .pipe(
+//       debounceTime(300),
+//       distinctUntilChanged(),
+//       switchMap(([cityValue, stateValue]) => {
+//         // Update the selected city and state
+//         this.selectedcity = cityValue;
+//         this.selectedstate = stateValue;
+//         // Trigger the search
+//         this.onSearch();
+//         return of([cityValue, stateValue]);
+//       })
+//     )
+//     .subscribe();
+// }
+
+
+  async detectLocation() {
+    if (this.isLocationDetectionEnabled) {
+      try {
+        const response = await fetch(`https://ipinfo.io/json?token=${this.IPINFO_TOKEN}`);
+        const data: IpInfo = await response.json();
+        
+        // Update form controls
+        this.street = ''; // Street isn't provided by ipinfo
+        this.cityControl.setValue(data.city);
+        this.stateControl.setValue(this.getFullStateName(data.region));
+        
+        // Update selected values
+        this.selectedcity = data.city;
+        this.selectedstate = this.getFullStateName(data.region);
+        console.log(this.selectedcity);
+        console.log(this.selectedstate);
+        // Disable form controls
+        this.streetControl.disable();
+        this.cityControl.disable();
+        this.stateControl.disable();
+        
+        // Update location service
+        this.locationService.setCity(data.city);
+        this.locationService.setState(this.getFullStateName(data.region));
+        // Clear validation messages
+        this.clearCityMessage();
+        this.clearStateMessage();
+        
+      } catch (error) {
+        console.error('Error detecting location:', error);
+        this.isLocationDetectionEnabled = false;
+      }
+    } else {
+      // Re-enable form controls
+      this.streetControl.enable();
+      this.cityControl.enable();
+      this.stateControl.enable();
+    }
+  }
+  getFullStateName(stateAbbr: string): string {
+    return this.stateMapping[stateAbbr] || stateAbbr;
+  }
   private _filterStates(value: string): string[] {
-    const filterValue = value.toLowerCase();
-    return this.states.filter(state => state.toLowerCase().includes(filterValue));
+      const filterValue = value.toLowerCase();
+      return this.states.filter(state => state.toLowerCase().includes(filterValue));
+
   }
 
   private stateMapping: { [key: string]: string } = {
@@ -144,7 +240,7 @@ export class HeaderComponent implements OnInit {
   'WY': 'Wyoming'
 };
 
-@Output() searchInitiated = new EventEmitter<{ city: string, state: string }>();
+
 
 
 
@@ -152,8 +248,7 @@ export class HeaderComponent implements OnInit {
   const longStateName = this.stateMapping[statename]; 
   
   if (longStateName) {
-    this.stateControl.setValue(longStateName);
-    
+    this.stateControl.setValue(longStateName);    
     this.clearStateMessage();
   } else {
     console.warn(`No mapping found for state: ${statename}`);
@@ -216,11 +311,100 @@ selectCity(city: City) {
       this.filteredStates = of([]);
     }
   }
-  
+
+  // onSearch() {
+  //   this.searchclicked = true;
+  //   if (!this.isLocationDetectionEnabled) {
+  //     this.selectedcity = this.city;
+  //     this.selectedstate = this.state;
+  //     console.log(this.selectedcity);
+  //   }
+  //   this.searchInitiated.emit({ 
+  //     city: this.selectedcity, 
+  //     state: this.selectedstate 
+  //   });
+
+  //   this.sharedService.toggleContentVisibility(true);
+  //   this.cdr.detectChanges();
+  // }
+  // @Output() searchInitiated = new EventEmitter<{ city: string, state: string }>();
+  // onLocationDetectionChange(event: Event) {
+  //   const checkbox = event.target as HTMLInputElement;
+  //   this.isLocationDetectionEnabled = checkbox.checked;
+  //   //this.detectLocation();
+  //   this.detectLocation().then(() => {
+  //   if (this.isLocationDetectionEnabled) {
+  //     this.selectedcity = this.cityControl.value;
+  //     this.selectedstate = this.stateControl.value;
+  //     // Emit the event once the location is detected
+  //     this.onSearch();
+  //   }
+  // });
+  // }
+
   onSearch() {
+    //this.searchclicked = true;
+    if (!this.isLocationDetectionEnabled) {
+      this.selectedcity = this.city;
+      this.selectedstate = this.state;
+    }
     // Emit the selected city and state
-    // this.searchInitiated.emit({ city: this.selectedcity, state: this.selectedstate });
-    this.selectedcity = this.city; 
-    this.selectedstate = this.state;
+    if(this.selectedcity && this.selectedstate){
+      this.searchInitiated.emit({ 
+      city: this.selectedcity, 
+      state: this.selectedstate 
+    });
+    this.sharedService.toggleContentVisibility(true);
+    console.log('togggleddd');
+  }
+    // this.searchInitiated.emit({ 
+    //   city: this.selectedcity, 
+    //   state: this.selectedstate 
+    // });
+    // this.sharedService.toggleContentVisibility(true);
+  }
+
+  @Output() searchInitiated = new EventEmitter<{ city: string, state: string }>();
+
+  onLocationDetectionChange(event: Event) {
+    const checkbox = event.target as HTMLInputElement;
+    this.isLocationDetectionEnabled = checkbox.checked;
+    this.detectLocation();
+  }
+    clearForm() {
+    // Clear input values
+    this.street = '';
+    this.cityControl.setValue('');
+    this.stateControl.setValue('');
+    // Reset selected values
+    this.selectedcity = '';
+    this.selectedstate = '';
+    this.searchclicked = false;
+    // Clear validation messages
+    this.showStreetMessage = false;
+    this.showCityMessage = false;
+    this.showStateMessage = false;
+    // this.showResults = false;
+    this.sharedService.toggleContentVisibility(false);
+    // If location detection was enabled, disable it
+    if (this.isLocationDetectionEnabled) {
+      this.isLocationDetectionEnabled = false;
+      
+      // Re-enable the form controls
+      this.streetControl.enable()
+      this.cityControl.enable();
+      this.stateControl.enable();
+    }
+    
+    // Reset the checkbox if it exists in the DOM
+    const checkbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    if (checkbox) {
+      checkbox.checked = false;
+    }
+    
+    // Reset location service values
+    this.locationService.setCity('');
+    this.locationService.setState('');
   }
 }
+

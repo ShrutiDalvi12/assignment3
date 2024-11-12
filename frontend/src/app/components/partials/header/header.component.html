@@ -12,6 +12,7 @@
             <input id="street" name="street" class="form-control rounded" placeholder="Enter street" 
                    [(ngModel)]="street" 
                    (focus)="validateStreet()" 
+                   [formControl]="streetControl"
                    (input)="clearStreetMessage()" 
                    required>
             <div *ngIf="showStreetMessage" class="alert alert-warning">
@@ -34,7 +35,7 @@
           [formControl]="cityControl" 
           (input)="validateCity(cityControl.value)"
           (focus)="validateCity(cityControl.value)"
-          required 
+        
           [matAutocomplete]="autoCity" />
         
         <mat-autocomplete #autoCity="matAutocomplete">  
@@ -59,7 +60,7 @@
                [matAutocomplete]="autoState" 
                placeholder="Enter state" 
                (input)="validateState(stateControl.value)"
-               (focus)="validateState(stateControl.value)" required>
+               (focus)="validateState(stateControl.value)">
 
         <mat-autocomplete #autoState="matAutocomplete">
           <mat-option *ngFor="let stateOption of filteredStates | async" [value]="stateOption">
@@ -76,13 +77,15 @@
         <hr>
     </div>
     <div class="ralign-items-center text-center"ow mb-3 >
-        <p>Autodetect Location <span><input type="checkbox"></span> Current Location</p>
+        <p>Autodetect Location <span><input type="checkbox" 
+                 [checked]="isLocationDetectionEnabled" 
+                 (change)="onLocationDetectionChange($event)"></span> Current Location</p>
     </div>
     <div class="container mt-3 d-flex justify-content-center align-items-center">
-    <button type="button" class="btn btn-primary me-2" (click)="onSearch()">
+    <button type="button" class="btn btn-primary me-2"  (click)="onSearch()">
         <img src="/assets/images/search.svg" alt="Search" class="icon"> Search
     </button>
-    <button type="button" class="btn btn-outline-secondary">
+    <button type="button" class="btn btn-outline-secondary" (click)="clearForm()">
         <img src="/assets/images/list-nested.svg" alt="Clear" class="icon"> Clear
     </button>
 </div>
