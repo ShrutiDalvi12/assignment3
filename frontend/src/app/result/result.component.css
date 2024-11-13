@@ -73,3 +73,7 @@
   width: 30px;
   height: 30px;
 }
+
+.values-column {
+  width: 60%; /* Adjust width percentage as needed */
+}

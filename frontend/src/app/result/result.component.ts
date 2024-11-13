@@ -13,7 +13,6 @@ import { trigger, transition, style, animate } from '@angular/animations';
 import { FavoriteService } from '../favorite.service';
 import { WeatherImageService } from '../weather-image.service';
 
-// Define interfaces for type safety
 interface WeatherInterval {
   startTime: string;
   values: {
@@ -72,7 +71,8 @@ export enum TabType {
 export class ResultComponent implements OnChanges, OnInit {
   @Input() city!: string;
   @Input() state!: string;
-  
+  @Input() errorMessage1: string = '';
+  @Input() street:string = '';
   readonly ButtonType = ButtonType;
   readonly TabType = TabType;
   
@@ -89,8 +89,16 @@ export class ResultComponent implements OnChanges, OnInit {
   selectedDay: any;
   lat: number = 0;  
   lon: number = 0;  
+  address: string ='';
   zoom: number = 15; 
   markerPosition = { lat: this.lat, lng: this.lon };
+  markerIcon = {
+    url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png', 
+    Size: {
+      width: 35, 
+      height: 35, 
+    }
+  };
   errorMessage: string = '';
   iserror : boolean = false;
   loading: boolean = false;
@@ -100,6 +108,7 @@ export class ResultComponent implements OnChanges, OnInit {
   chartOptions1: Highcharts.Options = {};
   chartOptions2: Highcharts.Options = {};
   showFavourites : boolean = false;
+  showerror : boolean = true;
   weatherImage: [string, string] = ["assets/images/Weather Symbols for Weather Codes/clear_day.svg","Clear, Sunny"];
   constructor(
     private weatherService: WeatherService,
@@ -124,10 +133,14 @@ export class ResultComponent implements OnChanges, OnInit {
 
   selectButton(button: ButtonType): void {
     this.activeButton = button;
+    if (button =='button1'){
+      this.showerror = true;
+    }
     if (button === 'button1' && this.iserror) {
       this.errorMessage = 'An error occurred. Please try again later.';
     } else if (button === 'button2') {
       this.iserror=false;
+      this.showerror=false;
       this.fetchFavorites();
       this.showFavourites=true;
     }
@@ -165,10 +178,14 @@ export class ResultComponent implements OnChanges, OnInit {
       });
       if (this.city && this.state) {
         this.fetchWeatherData();
+        this.showerror=false;
         //this.showContent=true;
       }
     }
-    this.errorMessage = '';
+    //this.showerror=false;
+    //this.errorMessage = '';
+    //this.showerror = true;
+    this.activeButton = ButtonType.Button1;
     this.fetchFavorites(); 
     this.showFavourites=false;
   }
@@ -188,7 +205,6 @@ getWeatherType(code: number):string{
       return;
     }
 
-    // Clear existing arrays
     this.dates = [];
     this.maxTemps = [];
     this.minTemps = [];
@@ -278,12 +294,21 @@ getWeatherType(code: number):string{
       typeof point[1] === 'number'
     );
 
-    const humiditySeries = intervals.map(entry => [
-      Date.parse(entry.startTime),
-      entry.values.humidity
-    ]).filter((point): point is [number, number] => 
-      typeof point[1] === 'number'
-    );
+    // const humiditySeries = intervals.map(entry => [
+    //   Date.parse(entry.startTime),
+    //   entry.values.humidity
+    // ]).filter((point): point is [number, number] => 
+    //   typeof point[1] === 'number'
+    // );
+
+    const humiditySeries = intervals
+  .map(entry => {
+    const timestamp = Date.parse(entry.startTime);
+    const humidity = entry.values.humidity;
+    return humidity !== undefined ? [timestamp, Math.round(humidity)] : undefined;
+  })
+  .filter((point): point is [number, number] => point !== undefined);
+
 
     const PressureSeries = intervals.map(entry => [
       Date.parse(entry.startTime),
@@ -326,6 +351,7 @@ getWeatherType(code: number):string{
           // Temperature axis
           
           title: { text: '' },
+          tickInterval: 15,
           opposite: false
         },
         { 
@@ -371,7 +397,8 @@ getWeatherType(code: number):string{
                            point.series.name === 'Pressure' ? ' inHg' :
                            point.series.name === 'Wind Speed' ? ' mph' :
                            '';
-              tooltip += `${point.series.name}: <b>${value}${units}</b><br/>`;
+              const color = point.series.color; // Get the color of the series
+              tooltip += `<span style="color:${color}">${point.series.name}: </span><b>${value}${units}</b><br/>`;
             }
           });
           
@@ -441,19 +468,21 @@ getWeatherType(code: number):string{
     ngOnChanges(changes: SimpleChanges) {
     if (changes['city'] || changes['state']) {
       this.clear();
+      //this.showerror=false;
       this.errorMessage = '';
-      this.showContent = false;
+      //this.showContent = false;
       this.showFavourites=false;
       if (this.city && this.state) {
       this.iserror=false;
+      this.showerror=false;
       this.fetchWeatherData();
     }
     }
-    
   }
   async clear(){
     this.selectedDay = false;
     this.iserror=false;
+    this.showerror = false;
     this.isStarred = false;
     this.activeButton = ButtonType.Button1;
   }
@@ -461,12 +490,14 @@ getWeatherType(code: number):string{
   showfavdata(favoritecity:string, favoritestate:string){
     this.city = favoritecity;
     this.state=favoritestate;
+    this.address = this.city + ", " + this.state;
     this.activeButton= ButtonType.Button1;
   }
   async fetchWeatherData() {
     if (!this.city || !this.state) {
     this.showContent = false;
     this.iserror = true;
+    this.showerror=true;
     this.errorMessage = "Please enter valid city and state values.";
     this.loading = false;
     console.log("nocitystate");
@@ -474,18 +505,21 @@ getWeatherType(code: number):string{
 
     try {
       console.log("hit fetchweather1");
+      this.showerror = false;
       this.loading = true;
-      const coordResponse = await this.weatherService.getCoordinates(this.city, this.state);
+      const coordResponse = await this.weatherService.getCoordinates(this.street, this.city, this.state);
       console.log("hit fetchweather2");
       if (!coordResponse?.lat || !coordResponse?.lon) {
         console.log('wrong city and state');
         throw new Error('Invalid coordinates received');
       }
 
-      const { lat, lon } = coordResponse;
+      const { lat, lon, address } = coordResponse;
       this.lat = lat;
       this.lon = lon;
-
+      this.address = address;
+      this.markerPosition = { lat: this.lat, lng: this.lon };
+      console.log(this.markerPosition);
       const weatherData = await (
       this.weatherService.getDailyForecast(lat, lon));
 
@@ -511,7 +545,18 @@ getWeatherType(code: number):string{
       );
     }
   }
-  
+  convertTo12HourHourOnly(isoDateString: string): string {
+    const date = new Date(isoDateString);
+
+    // Get the hours
+    let hours = date.getUTCHours();
+
+    // Determine AM/PM suffix and convert hours to 12-hour format
+    const amOrPm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12; // Convert 0 to 12 for 12-hour clock
+
+    return `${hours} ${amOrPm}`;
+}
 
   tweetWeather(): void {
     if (!this.weatherData || !this.city || !this.state) {
@@ -529,7 +574,7 @@ getWeatherType(code: number):string{
       day: 'numeric',
     });
 
-    const tweetContent = `The temperature in ${this.city}, ${this.state} on ${dayOfWeek}, ${formattedDate} is ${temperature}. The weather conditions are ${summary}. #CSCI571WeatherSearch`;
+    const tweetContent = `The temperature in ${this.address} on ${dayOfWeek}, ${formattedDate} is ${temperature} °F and the conditions are ${summary}. #CSCI571WeatherSearch`;
 
     const encodedTweet = encodeURIComponent(tweetContent);
 
@@ -560,7 +605,6 @@ getWeatherType(code: number):string{
                 if (!response.ok) {
                     throw new Error('Failed to delete favorite');
                 }
-                // Filter out the deleted favorite from the list
                 this.favorites = this.favorites.filter(fav => fav.city !== city);
                 console.log('Favorite deleted successfully');
             })

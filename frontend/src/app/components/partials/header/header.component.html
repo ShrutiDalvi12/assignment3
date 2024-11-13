@@ -90,8 +90,10 @@
     </button>
 </div>
 </form>
-
-
 </div>
 
-<app-result [city]="selectedcity" [state]="selectedstate"></app-result>
+
+
+<app-result [city]="selectedcity" [state]="selectedstate" [street]="street" [errorMessage1]="errorMessage1"></app-result>
+<!-- <app-result [errorMessage1]="errorMessage1"></app-result> -->
+<!-- <p *ngIf="errorMessage1" class="text-danger text-center">{{ errorMessage1 }}</p> -->

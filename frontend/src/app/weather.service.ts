@@ -1,36 +1,3 @@
-// // weather.service.ts
-// import { Injectable } from '@angular/core';
-// import { HttpClient } from '@angular/common/http';
-// import { Observable } from 'rxjs';
-// import { environment } from '../environments/environment';
-
-// @Injectable({
-//   providedIn: 'root'
-// })
-// export class WeatherService {
-//   private apiUrl = environment.apiUrl; // e.g., 'http://localhost:3000/api/weather'
-
-//   constructor(private http: HttpClient) {}
-
-//   getDailyForecast(lat: number, lon: number): Observable<any> {
-//     return this.http.get(`${this.apiUrl}`, {
-//       params: { lat: lat.toString(), lon: lon.toString() }
-//     });
-//   }
-
-//   getHourlyForecast(lat: number, lon: number): Observable<any> {
-//     return this.http.get(`${this.apiUrl}`, {
-//       params: { lat: lat.toString(), lon: lon.toString() }
-//     });
-//   }
-
-//   getTemperatureRange(lat: number, lon: number): Observable<any> {
-//     return this.http.get(`${this.apiUrl}`, {
-//       params: { lat: lat.toString(), lon: lon.toString() }
-//     });
-//   }
-// }
-
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../environments/environment';
@@ -71,8 +38,8 @@ export class WeatherService {
   //   return response.json();
   // }
 
-  async getCoordinates(city: string, state: string): Promise<any> {
-    const address = `${city}, ${state}`;
+  async getCoordinates(street:string, city: string, state: string): Promise<any> {
+    const address = `${street},${city}, ${state}`;
     console.log(address);
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${this.googleMapsApiKey}`;
     
@@ -85,7 +52,10 @@ export class WeatherService {
     // Check if any results are returned
     if (data.results && data.results.length > 0) {
       const { lat, lng } = data.results[0].geometry.location;
-      return { lat, lon: lng };
+      const address = data.results[0].formatted_address;
+      console.log(data);
+      //const { address } 
+      return { lat, lon: lng, address : address};
     } else {
       throw new Error('No results found for the specified location');
     }

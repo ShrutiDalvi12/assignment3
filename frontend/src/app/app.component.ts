@@ -21,12 +21,15 @@ export class AppComponent {
   title = 'frontend';
   city: string = '';
   state: string = '';
+  street : string ='';
 
   constructor(private locationService: LocationService) {
     this.locationService.city$.subscribe(city => this.city = city);
     this.locationService.state$.subscribe(state => this.state = state);
+    this.locationService.street$.subscribe(street => this.street = street);
   }
-  SearchInitiated(event: { city: string; state: string }) {
+  SearchInitiated(event: { street:string; city: string; state: string }) {
+    this.street = event.street;
     this.city = event.city;
     this.state = event.state;
   }

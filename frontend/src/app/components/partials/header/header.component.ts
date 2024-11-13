@@ -67,6 +67,7 @@ export class HeaderComponent implements OnInit {
   selectedstate : string ='';
   isLocationDetectionEnabled: boolean = false;
   searchclicked : boolean = false;
+  errorMessage1: string = '';
   IPINFO_TOKEN = 'c66e913b7616e3';
    constructor(
     private googlePlacesService: GooglePlacesService,
@@ -100,8 +101,8 @@ export class HeaderComponent implements OnInit {
           this.selectedstate = selectedCity.statename;
           this.locationService.setCity(selectedCity.name);
           this.locationService.setState(selectedCity.statename);
-          this.onSearch();
-          this.sharedService.toggleContentVisibility(true);
+          //this.onSearch();
+          //this.sharedService.toggleContentVisibility(true);
         }
       });
     });
@@ -240,10 +241,6 @@ export class HeaderComponent implements OnInit {
   'WY': 'Wyoming'
 };
 
-
-
-
-
   onCitySelected(statename: string) {
   const longStateName = this.stateMapping[statename]; 
   
@@ -343,19 +340,27 @@ selectCity(city: City) {
   // }
 
   onSearch() {
-    //this.searchclicked = true;
+    this.searchclicked = true;
     if (!this.isLocationDetectionEnabled) {
       this.selectedcity = this.city;
       this.selectedstate = this.state;
+    }else{
+      this.detectLocation();
     }
     // Emit the selected city and state
-    if(this.selectedcity && this.selectedstate){
+    if(this.selectedcity && this.selectedstate && this.searchclicked){
       this.searchInitiated.emit({ 
+      street: this.street,
       city: this.selectedcity, 
       state: this.selectedstate 
     });
+    this.errorMessage1 = '';
     this.sharedService.toggleContentVisibility(true);
-    console.log('togggleddd');
+    this.searchclicked = false;
+    //console.log('togggleddd');
+  }else{
+    console.log('sorry error occurred');
+    this.errorMessage1 = 'Sorry, an error occurred. Please try again.'; 
   }
     // this.searchInitiated.emit({ 
     //   city: this.selectedcity, 
@@ -364,12 +369,12 @@ selectCity(city: City) {
     // this.sharedService.toggleContentVisibility(true);
   }
 
-  @Output() searchInitiated = new EventEmitter<{ city: string, state: string }>();
+  @Output() searchInitiated = new EventEmitter<{ street:string, city: string, state: string }>();
 
   onLocationDetectionChange(event: Event) {
     const checkbox = event.target as HTMLInputElement;
     this.isLocationDetectionEnabled = checkbox.checked;
-    this.detectLocation();
+    //this.detectLocation();
   }
     clearForm() {
     // Clear input values
@@ -385,6 +390,7 @@ selectCity(city: City) {
     this.showCityMessage = false;
     this.showStateMessage = false;
     // this.showResults = false;
+    this.errorMessage1='';
     this.sharedService.toggleContentVisibility(false);
     // If location detection was enabled, disable it
     if (this.isLocationDetectionEnabled) {
